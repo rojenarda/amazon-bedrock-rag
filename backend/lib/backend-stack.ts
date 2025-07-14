@@ -207,11 +207,11 @@ export class BackendStack extends Stack {
         resources: [knowledgeBase.knowledgeBaseArn],
       })
     );
-
-    const whitelistedIps = [Stack.of(this).node.tryGetContext("allowedip")];
+    const allowedIp = Stack.of(this).node.tryGetContext("allowedip");
+    const whitelistedIps = allowedIp ? allowedIp.split(",").map((ip: string) => ip.trim()) : [];
 
     const apiGateway = new apigw.RestApi(this, "rag", {
-      description: "API for RAG",
+      description: "API for RAG", 
       restApiName: "rag-api",
       defaultCorsPreflightOptions: {
         allowOrigins: apigw.Cors.ALL_ORIGINS,

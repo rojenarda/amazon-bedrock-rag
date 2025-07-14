@@ -20,7 +20,10 @@ const createDataSource = async () => {
               seedUrls: [
                 // SeedUrls
                 {
-                  url: "https://www.aboutamazon.com/news/amazon-offices",
+                  url: "https://www.eaeelectric.com/",
+                },
+                {
+                  url: "https://www.elektrikticaret.com/",
                 },
               ],
             },
@@ -32,7 +35,8 @@ const createDataSource = async () => {
             scope: "HOST_ONLY",
             exclusionFilters: [".*plants.*"],
             inclusionFilters: [
-              "^https?://www.aboutamazon.com/news/amazon-offices/.*$",
+              "^https?://www.eaeelectric.com/.*$",
+              "^https?://www.elektrikticaret.com/.*$",
             ],
           },
         },

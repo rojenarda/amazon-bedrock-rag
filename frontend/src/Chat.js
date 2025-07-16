@@ -1,16 +1,19 @@
-import {
-  Box,
-  Stack,
-  Card,
-  CardContent,
-  Typography,
-} from "@mui/material";
 import React, { useEffect, useRef } from "react";
+import { Card, Typography, Space, Empty } from "antd";
+import { ThreeDots } from 'react-loading-icons';
 import PropTypes from "prop-types";
+
+const { Text, Paragraph } = Typography;
+
+
+const ThinkingMessage = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <ThreeDots width="32" height="16" fill="rgb(200, 60, 50)" />
+  </div>
+);
 
 const Chat = (props) => {
   const history = props.history;
-
   const boxRef = useRef(null);
 
   useEffect(() => {
@@ -20,62 +23,87 @@ const Chat = (props) => {
   }, [history]);
 
   return (
-    <Box
+    <div
       ref={boxRef}
-      sx={{
-        backgroundColor: "#f0f0f0",
-        paddingBottom: "20px",
+      style={{
+        backgroundColor: "#fafafa",
+        padding: "16px",
+        borderRadius: "12px",
         overflowY: "auto",
-        maxHeight: "650px",
+        minHeight: "70vh",
+        maxHeight: "70vh",
+        // minHeight: "400px",
+        border: "1px solid #f0f0f0"
       }}
     >
       {history?.length > 0 ? (
-        <Stack spacing={3}>
-          {history?.map((msg) => (
-            <Box sx={{ padding: "8px" }} key = {msg}>
-              <Box sx={{ paddingBottom: "8px" }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          {history?.map((msg, index) => (
+            <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+              {/* User Question */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Card
-                  raised
-                  sx={{
-                    bgcolor: "primary.main",
-                    marginLeft: "auto",
-                    color: "white",
-                    width: "65%",
+                  style={{
+                    backgroundColor: 'rgb(200, 60, 50)',
+                    color: 'white',
+                    maxWidth: '70%',
+                    borderRadius: '16px 16px 4px 16px',
+                    border: 'none',
+                    marginBottom: '8px'
                   }}
+                  bodyStyle={{ padding: '12px 16px' }}
                 >
-                  <CardContent>
-                    <Typography>{msg.question}</Typography>
-                  </CardContent>
+                  <Text style={{ color: 'white' }}>{msg.question}</Text>
                 </Card>
-              </Box>
+              </div>
 
-              <Card
-                raised
-                sx={{ bgcolor: "text.secondary", color: "white", width: "65%" }}
-              >
-                <CardContent>
-                  <Typography>{msg.response}</Typography>
-                  <Typography variant="caption">
-                    {msg.citation ? msg.citation : ""}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Box>
+              {/* AI Response */}
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Card
+                  style={{
+                    backgroundColor: 'white',
+                    maxWidth: '70%',
+                    borderRadius: '16px 16px 16px 4px',
+                    border: '1px solid #f0f0f0',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+                  }}
+                  bodyStyle={{ padding: '12px 16px' }}
+                >
+                  <Space direction="vertical" size="small">
+                    {/* eslint-disable-next-line */}
+                      {msg.response == "Thinking..." ? (
+                        <ThinkingMessage />
+                      ) : (
+                      <Paragraph style={{ margin: 0, color: '#333' }}>
+                        {msg.response}
+                      </Paragraph>
+                      )}
+                    {msg.citation && (
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        <a href={msg.citation} target="_blank" rel="noopener noreferrer">{msg.citation}</a>
+                      </Text>
+                    )}
+                  </Space>
+                </Card>
+              </div>
+            </Space>
           ))}
-        </Stack>
+        </Space>
       ) : (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          padding="30px"
-        >
-          <Typography variant="body1" color="textSecondary">
-            No chat history
-          </Typography>
-        </Box>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100%',
+          minHeight: '300px'
+        }}>
+          <Empty 
+            description="No chat history"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

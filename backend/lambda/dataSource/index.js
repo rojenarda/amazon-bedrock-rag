@@ -33,7 +33,7 @@ const createDataSource = async () => {
               rateLimit: 50,
             },
             scope: "HOST_ONLY",
-            exclusionFilters: [".*plants.*"],
+            exclusionFilters: [],
             inclusionFilters: [
               "^https?://www.eaeelectric.com/.*$",
               "^https?://www.elektrikticaret.com/.*$",

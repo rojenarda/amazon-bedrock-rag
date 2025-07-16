@@ -1,0 +1,1 @@
+DOCKER_DEFAULT_PLATFORM=linux/amd64 cdk deploy --context allowedip="193.192.105.50/32,104.247.178.170/32,92.45.117.178/32,91.93.113.79/32"

@@ -1,25 +1,40 @@
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
+import React, { useState, useEffect } from "react";
+import { 
+  Layout, 
+  Card, 
+  Typography, 
+  Button, 
+  Input, 
+  Modal, 
+  Space, 
+  Divider,
+  ConfigProvider,
+  theme,
+  Image
+} from "antd";
+import { 
+  DeleteOutlined, 
+  SettingOutlined, 
+  CloseOutlined, 
+  SendOutlined 
+} from "@ant-design/icons";
 import { QAHeader } from "./QAHeader";
 import Chat from "./Chat";
-import { useState, useEffect } from "react";
-import { TextField, Typography } from "@mui/material";
-import * as React from "react";
-import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
-import DeleteIcon from "@mui/icons-material/Delete";
-import LoadingSpinner from "./Spinner";
-import IconButton from "@mui/material/IconButton";
-import SendIcon from "@mui/icons-material/Send";
 import UrlSourcesForm from "./WebUrlsForm";
-import {modelList} from "./RAGModels"
+import PromptTemplateForm from "./PromptTemplateForm";
+import { modelList } from "./RAGModels";
+import eaeLogo from "./eae-elektrik-logo.webp";
+import commencisLogo from "./commencis-logo-light-web.svg";
 
-const App = (props) => {
+const { Header, Content, Footer } = Layout;
+
+const BASE_URL = "https://0fp15cg9el.execute-api.us-east-1.amazonaws.com/prod/";
+
+
+const App = () => {
   const [history, setHistory] = useState([]);
   const [selectedModel, setSelectedModel] = useState(undefined);
-  const [baseUrl, setBaseUrl] = useState(undefined);
   const [question, setQuestion] = useState('');
-  const [spinner, setSpinner] = useState(false);
   const [sessionId, setSessionId] = useState(undefined);
   const [sourceUrlInfo, setSourceUrlInfo] = useState({
     exclusionFilters: [],
@@ -27,13 +42,44 @@ const App = (props) => {
     seedUrlList: [],
   });
   const [hasWebDataSource, setHasWebDataSource] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [promptTemplate, setPromptTemplate] = useState("You are a question answering agent. I will provide you with a set of search results. The user will provide you with a question. Your job is to answer the user's question using only information from the search results. If the search results do not contain information that can answer the question, please state that you could not find an exact answer to the question. Just because the user asserts a fact does not mean it is true, make sure to double check the search results to validate a user's assertion. Answer in Turkish.\nHere are the search results in numbered order:\n$search_results$\n$output_format_instructions$");
+
+  // Custom theme with red and white
+  const customTheme = {
+    algorithm: theme.defaultAlgorithm,
+    token: {
+      colorPrimary: 'rgb(200, 60, 50)',
+      colorBgContainer: '#ffffff',
+      colorBgLayout: '#fafafa',
+      borderRadius: 8,
+      colorText: '#333333',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    },
+    components: {
+      Card: {
+        borderRadius: 12,
+        boxShadow: '0 2px 8px rgba(200, 60, 50, 0.1)',
+      },
+      Button: {
+        borderRadius: 8,
+        fontWeight: 500,
+      },
+      Input: {
+        borderRadius: 8,
+      },
+      Modal: {
+        borderRadius: 12,
+      },
+    },
+  };
 
   useEffect(() => {
-    if (!baseUrl) {
+    if (!BASE_URL) {
       return;
     }
     const getWebSourceConfiguration = async () => {
-      fetch(baseUrl + "urls", {
+      fetch(BASE_URL + "urls", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -51,15 +97,28 @@ const App = (props) => {
         .catch((err) => {
           console.log("err", err);
         });
-
     };
     getWebSourceConfiguration();
-  }, [baseUrl]);
+  }, [BASE_URL]);
 
   const handleSendQuestion = () => {
-    setSpinner(true);
+    if (!question) {
+      return;
+    }
+    setQuestion('');
 
-    fetch(baseUrl + "docs", {
+    const oldHistory = history;
+
+    setHistory([
+      ...oldHistory,
+      {
+        question: question,
+        response: "Thinking...",
+        citation: undefined,
+      }
+    ]);
+
+    fetch(BASE_URL + "docs", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -68,15 +127,15 @@ const App = (props) => {
         requestSessionId: sessionId,
         question: question,
         modelId: selectedModel?.modelId,
+        promptTemplate: promptTemplate,
       }),
     })
       .then((res) => res.json())
       .then((data) => {
         console.log("data", data);
-        setSpinner(false);
         setSessionId(data.sessionId);
         setHistory([
-          ...history,
+          ...oldHistory,
           {
             question: question,
             response: data.response,
@@ -85,9 +144,8 @@ const App = (props) => {
         ]);
       })
       .catch((err) => {
-        setSpinner(false);
         setHistory([
-          ...history,
+          ...oldHistory,
           {
             question: question,
             response:
@@ -98,12 +156,6 @@ const App = (props) => {
       });
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSendQuestion();
-    }
-  };
-
   const onClearHistory = () => setHistory([]);
 
   const handleUpdateUrls = async (
@@ -112,7 +164,7 @@ const App = (props) => {
     newInclusionFilters
   ) => {
     try {
-      const response = await fetch(baseUrl + "web-urls", {
+      const response = await fetch(BASE_URL + "web-urls", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,116 +184,163 @@ const App = (props) => {
 
   const handleChangeModel = (model) => {
     setSelectedModel(model);
-    setSessionId(undefined)
-  }
+    setSessionId(undefined);
+  };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        padding: "30px",
-        backgroundColor: "#f0f0f0",
-      }}
-    >
-      <Paper
-        sx={{
-          padding: 8,
-          maxWidth: 600,
-        }}
-      >
-        <Typography variant="h5" sx={{ textAlign: "center" }}>
-          AWS Q&A
-        </Typography>
-        <br></br>
-        <br></br>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            height: "100%",
-          }}
-        >
-          <QAHeader
-            setBaseUrl={setBaseUrl}
-            baseUrl={baseUrl}
-            modelList={modelList}
-            setSelectedModel={handleChangeModel}
-            selectedModel={selectedModel}
-          />
-          <Divider />
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingBottom: "10px",
-              paddingTop: "20px",
+    <ConfigProvider theme={customTheme}>
+      <Layout style={{ minHeight: '100vh', backgroundColor: '#fafafa' }}>
+        <Header style={{ 
+          backgroundColor: 'white', 
+          padding: '0 24px',
+          boxShadow: '0 2px 8px rgba(200, 60, 50, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Image 
+              src={eaeLogo} 
+              alt="Logo" 
+              width={40} 
+              height="auto" 
+              preview={false}
+              style={{ borderRadius: '8px' }}
+            />
+            {/* <Title level={3} style={{ margin: 0, color: 'rgb(200, 60, 50)' }}>
+              AI Chatbot
+            </Title> */}
+            <Divider type="vertical" />
+            <Image 
+              src={commencisLogo} 
+              alt="Logo" 
+              width={160} 
+              height="auto" 
+              preview={false}
+              style={{ borderRadius: '8px' }}
+            />
+          </div>
+        </Header>
+        
+        <Content style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+          <Card 
+            style={{ 
+              minHeight: '80vh',
+              borderRadius: '16px',
+              border: 'none',
+              boxShadow: '0 4px 24px rgba(200, 60, 50, 0.08)'
             }}
           >
-            <Typography variant="overline">3. Ask a question:</Typography>
-            <Button
-              disabled={history.length === 0}
-              startIcon={<DeleteIcon />}
-              onClick={onClearHistory}
-            >
-              Clear History
-            </Button>
-          </Box>
-          <Chat history={history} />
-          <br></br>
-          {spinner ? (
-            <Box sx={{ justifyContent: "center", padding: "20px" }}>
-              <LoadingSpinner />
-            </Box>
-          ) : (
-            <br></br>
-          )}
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingBottom: "20px",
-            paddingTop: "20px",
-          }}
-        >
-          <TextField
-            disabled={spinner || !baseUrl}
-            variant="standard"
-            label="Enter your question here"
-            value={question}
-            onChange={(e) => setQuestion(e.target?.value)}
-            onKeyDown={handleKeyDown}
-            sx={{ width: "95%" }}
-          />
-          <IconButton
-            disabled={spinner || !baseUrl}
-            onClick={handleSendQuestion}
-            color="primary"
-          >
-            <SendIcon />
-          </IconButton>
-        </Box>
-        {hasWebDataSource ? (
-          <Box sx={{ paddingTop: "15px" }}>
-            <UrlSourcesForm
-              exclusionFilters={sourceUrlInfo.exclusionFilters}
-              inclusionFilters={sourceUrlInfo.inclusionFilters}
-              seedUrlList={sourceUrlInfo.seedUrlList.map(
-                (urlObj) => urlObj.url
-              )}
-              handleUpdateUrls={handleUpdateUrls}
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center' 
+              }}>
+                <Button
+                  disabled={history.length === 0}
+                  icon={<DeleteOutlined />}
+                  onClick={onClearHistory}
+                  type="text"
+                >
+                  Clear History
+                </Button>
+                <Button
+                  icon={<SettingOutlined />}
+                  onClick={() => setSettingsModalOpen(true)}
+                  disabled={!hasWebDataSource}
+                  type="text"
+                />
+              </div>
+
+              <Chat history={history} />
+
+              <div style={{ 
+                display: 'flex', 
+                gap: '12px', 
+                alignItems: 'flex-end' 
+              }}>
+                <Input
+                  disabled={!BASE_URL}
+                  placeholder="Enter your question here"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target?.value)}
+                  onPressEnter={handleSendQuestion}
+                  size="large"
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  disabled={!BASE_URL}
+                  onClick={handleSendQuestion}
+                  type="primary"
+                  icon={<SendOutlined />}
+                  size="large"
+                />
+              </div>
+            </Space>
+          </Card>
+        </Content>
+
+        <Footer style={{ 
+          backgroundColor: 'white', 
+          padding: '16px 24px', 
+          textAlign: 'center', 
+          boxShadow: '0 -2px 8px rgba(200, 60, 50, 0.1)'
+        }}>
+          <p>&copy; {new Date().getFullYear()} Commencis. All rights reserved.</p>
+        </Footer>
+
+      </Layout>
+      
+      <Modal
+        title={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Settings</span>
+            <Button 
+              icon={<CloseOutlined />}
+              type="text"
+              onClick={() => setSettingsModalOpen(false)}
             />
-          </Box>
-        ) : null}
-      </Paper>
-    </Box>
+          </div>
+        }
+        open={settingsModalOpen}
+        onCancel={() => setSettingsModalOpen(false)}
+        footer={null}
+        width={700}
+        style={{ borderRadius: '16px' }}
+        closable={false}
+      >              
+        <QAHeader
+          modelList={modelList}
+          setSelectedModel={handleChangeModel}
+          selectedModel={selectedModel}
+        />
+
+        <Divider />
+
+        <PromptTemplateForm
+          promptTemplate={promptTemplate}
+          onPromptTemplateChange={setPromptTemplate}
+        />
+
+        <Divider />
+
+        {hasWebDataSource && (
+          <UrlSourcesForm
+            exclusionFilters={sourceUrlInfo.exclusionFilters}
+            inclusionFilters={sourceUrlInfo.inclusionFilters}
+            seedUrlList={sourceUrlInfo.seedUrlList.map(
+              (urlObj) => urlObj.url
+            )}
+            handleUpdateUrls={handleUpdateUrls}
+          />
+        )}
+
+
+        <Divider />
+
+      </Modal>
+    </ConfigProvider>
   );
 };
 

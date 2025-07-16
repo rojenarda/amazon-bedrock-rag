@@ -1,21 +1,18 @@
 import { useState } from "react";
 import {
-  Box,
-  TextField,
+  Input,
   Button,
-  Accordion,
-  AccordionActions,
-  AccordionSummary,
   Typography,
-  Stack,
-  IconButton,
-  Snackbar,
-  Alert
-} from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+  Space,
+  Alert,
+  message,
+  Card,
+  Divider
+} from "antd";
+import { MinusCircleOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import PropTypes from 'prop-types';
+
+const { Title, Text } = Typography;
 
 const UrlSourcesForm = (props) => {
   const { exclusionFilters, inclusionFilters, seedUrlList, handleUpdateUrls } =
@@ -24,9 +21,6 @@ const UrlSourcesForm = (props) => {
   const [newExclusionFilters, setNewExclusionFilters] = useState(exclusionFilters);
   const [newInclusionFilters, setNewInclusionFilters] = useState(inclusionFilters);
   const [isMaxNumUrls, setIsMaxNumUrls] = useState(seedUrlList.length >= 10);
-  const [success, setSuccess] = useState(false);
-  const [open, setOpen] = useState(false);
-
 
   const validateURL = (url) => {
     const regex = new RegExp(
@@ -53,8 +47,12 @@ const UrlSourcesForm = (props) => {
       newExclusionFilters,
       newInclusionFilters
     );
-    setSuccess(isUpdated);
-    setOpen(true);
+    
+    if (isUpdated) {
+      message.success('Successfully updated!');
+    } else {
+      message.error('Update was unsuccessful. Make sure your base url is valid and/or your current data source is not in sync mode');
+    }
   };
 
   const handleUrlUpdate = (newUrl, index) => {
@@ -64,13 +62,13 @@ const UrlSourcesForm = (props) => {
   };
 
   const handleExclusionFilterUpdate = (filter, index) => {
-    const newFilters = [...exclusionFilters];
+    const newFilters = [...newExclusionFilters];
     newFilters[index] = filter;
     setNewExclusionFilters(newFilters);
   };
 
   const handleInclusionFilterUpdate = (filter, index) => {
-    const newFilters = [...inclusionFilters];
+    const newFilters = [...newInclusionFilters];
     newFilters[index] = filter;
     setNewInclusionFilters(newFilters);
   };
@@ -90,152 +88,149 @@ const UrlSourcesForm = (props) => {
     const newUrls = [...urls];
     newUrls.splice(newUrls.length - 1, 1);
     setUrls(newUrls);
-  };
-
-  const handleClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setOpen(false);
+    setIsMaxNumUrls(false);
   };
 
   return (
-    <div>
-      <Accordion>
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1-content"
-          id="panel1-header"
-        >
-          Source URLs and Filters
-        </AccordionSummary>
-        <Box sx={{ padding: "20px" }}>
-          <Typography variant="overline" >URL list:</Typography>
-          <Stack sx={{ paddingBottom: "15px" }}>
-            {urls?.length > 0
-              ? urls?.map((url, index) => (
-                  <TextField
-                    variant="standard"
-                    key={url}
-                    label={`#${index + 1}`}
-                    value={url}
-                    onChange={(e) => handleUrlUpdate(e.target?.value, index)}
-                    sx={{ width: "85%" }}
-                  />
-                ))
-              : null}
-            <Stack direction="row" sx={{ marginLeft: "auto" }}>
-              <IconButton disabled={urls.length === 0} onClick={removeUrlInput}>
-                <RemoveCircleIcon />
-              </IconButton>
-              <IconButton
-                disabled={isMaxNumUrls}
-                onClick={addUrlInput}
-                color="primary"
-              >
-                <AddCircleIcon />
-              </IconButton>
-            </Stack>
-          </Stack>
-          <Typography variant="overline">Exclusion Filters:</Typography>
-          <Stack sx={{ paddingBottom: "15px" }}>
-            {newExclusionFilters?.length > 0
-              ? newExclusionFilters.map((filter, index) => (
-                  <TextField
-                    variant="standard"
-                    value={filter}
-                    key={filter}
-                    onChange={(e) =>
-                      handleExclusionFilterUpdate(e.target?.value, index)
-                    }
-                    sx={{ width: "85%" }}
-                  />
-                ))
-              : null}
-            <Stack direction="row" sx={{ marginLeft: "auto" }}>
-              <IconButton
-                disabled={newExclusionFilters.length === 0}
-                onClick={() => {
-                  const filters = [...newExclusionFilters];
-                  filters.splice(filters.length - 1, 1);
-                  setNewExclusionFilters(filters);
-                }}
-              >
-                <RemoveCircleIcon />
-              </IconButton>
-              <IconButton
-                onClick={() =>
-                  setNewExclusionFilters([...newExclusionFilters, ""])
-                }
-                color="primary"
-              >
-                <AddCircleIcon />
-              </IconButton>
-            </Stack>
-          </Stack>
-          <Typography variant="overline">Inclusion Filters:</Typography>
-          <Stack sx={{ paddingBottom: "15px" }}>
-            {newInclusionFilters.length > 0
-              ? newInclusionFilters.map((filter, index) => (
-                  <TextField
-                    variant="standard"
-                    value={filter}
-                    key={filter}
-                    onChange={(e) =>
-                      handleInclusionFilterUpdate(e.target?.value, index)
-                    }
-                    sx={{ width: "85%" }}
-                  />
-                ))
-              : null}
-            <Stack direction="row" sx={{ marginLeft: "auto" }}>
-              <IconButton
-                disabled={newInclusionFilters.length === 0}
-                onClick={() => {
-                  const filters = [...newInclusionFilters];
-                  filters.splice(filters.length - 1, 1);
-                  setNewExclusionFilters(filters);
-                }}
-              >
-                <RemoveCircleIcon />
-              </IconButton>
-              <IconButton
-                onClick={() =>
-                  setNewInclusionFilters([...newInclusionFilters, ""])
-                }
-                color="primary"
-              >
-                <AddCircleIcon />
-              </IconButton>
-            </Stack>
-            <Alert severity="info">
-          Note: Submitting urls and filters won't automatically sync the web data source. 
-          The data source is updated on a recurring schedule and any submitted list of seed urls and filters will be considered for the upcoming sync. 
-        </Alert>
-          </Stack>
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Title level={4} style={{ margin: 0 }}>
+        Source URLs and Filters
+      </Title>
+      
+      <Card style={{ borderRadius: '12px' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          {/* URL List Section */}
+          <div>
+            <Text strong style={{ fontSize: '16px', color: 'rgb(200, 60, 50)' }}>
+              URL List
+            </Text>
+            <Space direction="vertical" size="middle" style={{ width: '100%', marginTop: '12px' }}>
+              {urls?.length > 0 && urls.map((url, index) => (
+                <Input
+                  key={`url-${index}`}
+                  placeholder={`URL #${index + 1}`}
+                  value={url}
+                  onChange={(e) => handleUrlUpdate(e.target.value, index)}
+                  size="large"
+                />
+              ))}
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <Button
+                  disabled={urls.length === 0}
+                  onClick={removeUrlInput}
+                  icon={<MinusCircleOutlined />}
+                  type="text"
+                  danger
+                />
+                <Button
+                  disabled={isMaxNumUrls}
+                  onClick={addUrlInput}
+                  icon={<PlusCircleOutlined />}
+                  type="primary"
+                />
+              </div>
+            </Space>
+          </div>
 
-          <AccordionActions>
-            <Button onClick={handleSubmit}>Update</Button>
-          </AccordionActions>
-        </Box>
-      </Accordion>
-      <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
-        {success ? (
+          <Divider />
+
+          {/* Exclusion Filters Section */}
+          <div>
+            <Text strong style={{ fontSize: '16px', color: 'rgb(200, 60, 50)' }}>
+              Exclusion Filters
+            </Text>
+            <Space direction="vertical" size="middle" style={{ width: '100%', marginTop: '12px' }}>
+              {newExclusionFilters?.length > 0 && newExclusionFilters.map((filter, index) => (
+                <Input
+                  key={`exclusion-${index}`}
+                  placeholder={`Exclusion Filter #${index + 1}`}
+                  value={filter}
+                  onChange={(e) => handleExclusionFilterUpdate(e.target.value, index)}
+                  size="large"
+                />
+              ))}
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <Button
+                  disabled={newExclusionFilters.length === 0}
+                  onClick={() => {
+                    const filters = [...newExclusionFilters];
+                    filters.splice(filters.length - 1, 1);
+                    setNewExclusionFilters(filters);
+                  }}
+                  icon={<MinusCircleOutlined />}
+                  type="text"
+                  danger
+                />
+                <Button
+                  onClick={() => setNewExclusionFilters([...newExclusionFilters, ""])}
+                  icon={<PlusCircleOutlined />}
+                  type="primary"
+                />
+              </div>
+            </Space>
+          </div>
+
+          <Divider />
+
+          {/* Inclusion Filters Section */}
+          <div>
+            <Text strong style={{ fontSize: '16px', color: 'rgb(200, 60, 50)' }}>
+              Inclusion Filters
+            </Text>
+            <Space direction="vertical" size="middle" style={{ width: '100%', marginTop: '12px' }}>
+              {newInclusionFilters?.length > 0 && newInclusionFilters.map((filter, index) => (
+                <Input
+                  key={`inclusion-${index}`}
+                  placeholder={`Inclusion Filter #${index + 1}`}
+                  value={filter}
+                  onChange={(e) => handleInclusionFilterUpdate(e.target.value, index)}
+                  size="large"
+                />
+              ))}
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <Button
+                  disabled={newInclusionFilters.length === 0}
+                  onClick={() => {
+                    const filters = [...newInclusionFilters];
+                    filters.splice(filters.length - 1, 1);
+                    setNewInclusionFilters(filters);
+                  }}
+                  icon={<MinusCircleOutlined />}
+                  type="text"
+                  danger
+                />
+                <Button
+                  onClick={() => setNewInclusionFilters([...newInclusionFilters, ""])}
+                  icon={<PlusCircleOutlined />}
+                  type="primary"
+                />
+              </div>
+            </Space>
+          </div>
+
           <Alert
-            onClose={handleClose}
-            severity="success"
-            sx={{ width: "100%" }}
-          >
-            Successfully updated!
-          </Alert>
-        ) : (
-          <Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
-            Update was unsuccessful. Make sure your base url is valid and/or
-            your current data source is not in sync mode
-          </Alert>
-        )}
-      </Snackbar>
-    </div>
+            message="Note: Submitting urls and filters won't automatically sync the web data source. The data source is updated on a recurring schedule and any submitted list of seed urls and filters will be considered for the upcoming sync."
+            type="info"
+            showIcon
+            style={{ borderRadius: '8px' }}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button 
+              type="primary" 
+              onClick={handleSubmit}
+              size="large"
+              style={{ paddingLeft: '32px', paddingRight: '32px' }}
+            >
+              Update URLs
+            </Button>
+          </div>
+        </Space>
+      </Card>
+    </Space>
   );
 };
 
@@ -244,12 +239,12 @@ UrlSourcesForm.propTypes = {
   inclusionFilters: PropTypes.array,
   seedUrlList: PropTypes.array,
   handleUpdateUrls: PropTypes.func.isRequired
-}
+};
 
 UrlSourcesForm.defaultProps = {
   exclusionFilters: [],
   inclusionFilters: [],
   seedUrlList: [],
-}
+};
 
 export default UrlSourcesForm;
